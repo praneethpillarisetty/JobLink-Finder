@@ -3,9 +3,9 @@ importScripts('storage.js');
 
 const GOOGLE_LOAD_TIMEOUT_MS = 15000;
 const GOOGLE_STABILIZE_DELAY_MS = 1200;
-const BETWEEN_REQUEST_DELAY_MS = 700;
+const BETWEEN_REQUEST_DELAY_MS = 900;
 const MAX_CONCURRENT_TABS = 3;
-const MAX_QUERIES = 12;
+const MAX_QUERIES = 15;
 const MAX_OPEN_RESULT_TABS = 12;
 
 const ATS_SITES = Object.freeze([
@@ -38,7 +38,7 @@ function toTerms(value) {
     .split(/\s+/)
     .map((term) => term.trim())
     .filter(Boolean)
-    .slice(0, 4);
+    .slice(0, 5);
 }
 
 function getDomain(url) {
@@ -57,6 +57,10 @@ function normalizeTitle(title) {
     .trim();
 }
 
+/**
+ * Builds multiple query variants and scopes them to ATS domains.
+ * Query output stays internal and is never shown in popup UI.
+ */
 function generateQueries(input) {
   const title = (input.jobTitle || '').trim();
   const location = (input.location || '').trim();
@@ -66,29 +70,51 @@ function generateQueries(input) {
   const visa = Boolean(input.visaSponsorship);
 
   const keywordTerms = toTerms(keywords);
+  const variants = [];
 
-  const variations = [];
-  variations.push(`${quotePhrase(title)} ${workMode ? quotePhrase(workMode) : ''}`.trim());
-  if (keywordTerms.length) {
-    variations.push(`${quotePhrase(title)} ${keywordTerms.map(quotePhrase).join(' ')}`);
+  // Exact match style query.
+  if (title) {
+    variants.push(`${quotePhrase(title)} ${workMode ? quotePhrase(workMode) : '"remote"'}`.trim());
   }
-  variations.push(`${title} ${workMode || 'remote'} jobs ${location}`.trim());
-  if (visa) {
-    variations.push(`${quotePhrase(title)} "visa sponsorship" ${location}`.trim());
-  }
-  if (company) {
-    variations.push(`"careers" ${quotePhrase(title)} ${quotePhrase(company)} ${location}`.trim());
-  }
-  variations.push(`${quotePhrase(title)} "careers" ${location}`.trim());
 
-  const scopedQueries = [];
-  for (const variation of variations) {
-    for (const site of ATS_SITES) {
-      scopedQueries.push(`${site} ${variation}`.trim());
+  // Enriched keywords query.
+  if (title && keywordTerms.length) {
+    variants.push(`${quotePhrase(title)} ${keywordTerms.map(quotePhrase).join(' ')}`);
+  }
+
+  // Broader discovery query.
+  variants.push(`${title} ${workMode || 'remote'} jobs ${location}`.trim());
+
+  // Visa-focused query.
+  if (visa && title) {
+    variants.push(`${quotePhrase(title)} "visa sponsorship" ${location}`.trim());
+  }
+
+  // Direct company career query.
+  if (title && company) {
+    variants.push(`"careers" ${quotePhrase(title)} ${quotePhrase(company)} ${location}`.trim());
+  }
+
+  // Generic company-careers fallback.
+  if (title) {
+    variants.push(`${quotePhrase(title)} "careers" ${location}`.trim());
+  }
+
+  const scoped = [];
+  for (const variant of variants) {
+    if (!variant) {
+      continue;
     }
+
+    for (const site of ATS_SITES) {
+      scoped.push(`${site} ${variant}`.trim());
+    }
+
+    // Keep a non-site-scoped direct careers query for broader coverage.
+    scoped.push(`${variant} "careers"`.trim());
   }
 
-  return [...new Set(scopedQueries)].slice(0, MAX_QUERIES);
+  return [...new Set(scoped)].slice(0, MAX_QUERIES);
 }
 
 async function setSearchState(partial) {
@@ -147,7 +173,8 @@ async function extractFromGoogleTab(query) {
   try {
     await waitForTabComplete(tab.id);
     await sleep(GOOGLE_STABILIZE_DELAY_MS);
-    // Explicitly use chrome.scripting in the automation flow to verify page readiness.
+
+    // Use scripting API for explicit readiness check.
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => document.readyState
@@ -160,7 +187,7 @@ async function extractFromGoogleTab(query) {
 
     return Array.isArray(response?.results) ? response.results : [];
   } catch (error) {
-    console.warn('JobLink Finder extraction failed for query:', query, error);
+    console.warn('JobLink Finder extraction failed:', error);
     return [];
   } finally {
     await chrome.tabs.remove(tab.id).catch(() => undefined);
@@ -171,6 +198,7 @@ async function runQueue(queries) {
   const queue = [...queries];
   const results = [];
 
+  // Small worker pool to avoid opening too many tabs at once.
   const workers = Array.from({ length: Math.min(MAX_CONCURRENT_TABS, queue.length) }, async () => {
     while (queue.length) {
       const query = queue.shift();
@@ -195,13 +223,17 @@ function dedupeJobs(records) {
       continue;
     }
 
-    const titleDomainKey = `${normalizeTitle(record.title)}::${getDomain(normalizedUrl)}`;
-    if (uniqueByTitleDomain.has(titleDomainKey)) {
+    const normalized = normalizeTitle(record.title);
+    const titleDomainKey = `${normalized}::${getDomain(normalizedUrl)}`;
+
+    if (normalized && uniqueByTitleDomain.has(titleDomainKey)) {
       continue;
     }
 
     uniqueByUrl.add(normalizedUrl);
-    uniqueByTitleDomain.add(titleDomainKey);
+    if (normalized) {
+      uniqueByTitleDomain.add(titleDomainKey);
+    }
 
     output.push(
       JobLinkStorage.createJobRecord({
@@ -226,7 +258,7 @@ async function maybeOpenResultTabs(records, shouldOpenTabs) {
   const top = records.slice(0, MAX_OPEN_RESULT_TABS);
   for (const record of top) {
     await chrome.tabs.create({ url: record.url, active: false });
-    await sleep(120);
+    await sleep(150);
   }
 }
 

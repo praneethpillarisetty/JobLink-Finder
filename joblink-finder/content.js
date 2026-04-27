@@ -1,25 +1,26 @@
 /**
- * Extract ATS job links from Google Search results and save to local storage.
- * Runs only on https://www.google.com/search*.
+ * Extract job links from Google Search result pages.
+ * Runs only on https://www.google.com/search* and responds on-demand.
  */
-(async () => {
+(() => {
   if (!window.JobLinkStorage) {
     return;
   }
 
   const ATS_PATTERNS = window.JobLinkStorage.ATS_RULES.flatMap((rule) => rule.patterns);
+  const CAREER_HINTS = ['/careers', '/career', '/jobs', '/job'];
 
-  function isAtsLink(url) {
+  function isPotentialJobLink(url) {
     const lowered = (url || '').toLowerCase();
-    return ATS_PATTERNS.some((pattern) => lowered.includes(pattern));
+    if (ATS_PATTERNS.some((pattern) => lowered.includes(pattern))) {
+      return true;
+    }
+
+    // Direct company career pages (keyword-based fallback)
+    return CAREER_HINTS.some((hint) => lowered.includes(hint));
   }
 
-  function getCurrentQuery() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('q') || '';
-  }
-
-  function extractGoogleResultLinks() {
+  function extractGoogleResultLinks(query) {
     const anchors = [...document.querySelectorAll('a[href]')];
 
     const candidates = anchors
@@ -40,10 +41,10 @@
           return null;
         }
 
-        return { title, url: href };
+        return { title, url: href, query };
       })
       .filter(Boolean)
-      .filter((item) => isAtsLink(item.url));
+      .filter((item) => isPotentialJobLink(item.url));
 
     const unique = new Map();
     for (const item of candidates) {
@@ -56,25 +57,19 @@
     return [...unique.values()];
   }
 
-  try {
-    const query = getCurrentQuery();
-    const links = extractGoogleResultLinks();
-
-    if (!links.length) {
-      return;
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== 'JOBLINK_EXTRACT_RESULTS') {
+      return false;
     }
 
-    const records = links.map((link) => ({
-      title: link.title,
-      url: link.url,
-      source: window.JobLinkStorage.detectSource(link.url),
-      query,
-      status: 'Saved',
-      dateSaved: new Date().toISOString()
-    }));
+    try {
+      const query = message?.payload?.query || '';
+      const results = extractGoogleResultLinks(query);
+      sendResponse({ ok: true, results });
+    } catch (error) {
+      sendResponse({ ok: false, error: error.message || 'Extraction failed', results: [] });
+    }
 
-    await window.JobLinkStorage.upsertJobs(records);
-  } catch (error) {
-    console.error('JobLink Finder: unable to process search results.', error);
-  }
+    return true;
+  });
 })();

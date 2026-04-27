@@ -10,20 +10,20 @@
     <main class="app">
       <header>
         <h1>JobLink Finder</h1>
-        <p class="subtext">Find ATS job postings faster with advanced Google queries.</p>
+        <p class="subtext">Private ATS job discovery from a single click.</p>
       </header>
 
       <section class="card">
-        <h2>Search Builder</h2>
-        <form id="queryForm">
+        <h2>Search Jobs</h2>
+        <form id="searchForm">
           <div class="field-grid">
             <label>
               Job title
-              <input id="jobTitle" type="text" placeholder="Software Engineer" required />
+              <input id="jobTitle" type="text" placeholder="Data Engineer" required />
             </label>
             <label>
               Location
-              <input id="location" type="text" placeholder="Austin, TX" />
+              <input id="location" type="text" placeholder="Remote or Austin, TX" />
             </label>
             <label>
               Work mode
@@ -35,24 +35,14 @@
               </select>
             </label>
             <label>
-              ATS platform
-              <select id="atsPlatform">
-                <option value="All">All</option>
-                <option value="Workday">Workday</option>
-                <option value="Greenhouse">Greenhouse</option>
-                <option value="Lever">Lever</option>
-                <option value="Ashby">Ashby</option>
-                <option value="SmartRecruiters">SmartRecruiters</option>
-                <option value="iCIMS">iCIMS</option>
-                <option value="SuccessFactors">SuccessFactors</option>
-                <option value="Oracle">Oracle</option>
-              </select>
+              Company (optional)
+              <input id="company" type="text" placeholder="Stripe" />
             </label>
           </div>
 
           <label>
             Keywords
-            <input id="keywords" type="text" placeholder="python kubernetes healthcare" />
+            <input id="keywords" type="text" placeholder="ETL Snowflake Python" />
           </label>
 
           <label class="checkbox">
@@ -60,26 +50,22 @@
             Include visa sponsorship terms
           </label>
 
-          <label>
-            Generated Google query
-            <textarea id="generatedQuery" rows="3" readonly></textarea>
+          <label class="checkbox">
+            <input id="openResultsInTabs" type="checkbox" />
+            Open all jobs in tabs (max 12)
           </label>
 
           <div class="actions">
-            <button type="submit" class="primary">Search Google</button>
-            <button id="copyQuery" type="button">Copy Query</button>
+            <button type="submit" id="searchBtn" class="primary">Search Jobs</button>
+            <button id="clearAll" type="button" class="danger">Clear All</button>
           </div>
         </form>
       </section>
 
       <section class="card">
         <div class="card-header">
-          <h2>Saved Jobs</h2>
+          <h2>Dashboard</h2>
           <span id="jobCount">0</span>
-        </div>
-        <div class="actions">
-          <button id="exportCsv" type="button">Export CSV</button>
-          <button id="clearAll" type="button" class="danger">Clear All</button>
         </div>
         <ul id="jobList" class="job-list"></ul>
       </section>

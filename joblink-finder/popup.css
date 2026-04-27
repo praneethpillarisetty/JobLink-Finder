@@ -76,7 +76,6 @@ label {
 
 input,
 select,
-textarea,
 button {
   margin-top: 4px;
   width: 100%;
@@ -84,10 +83,6 @@ button {
   border-radius: 6px;
   padding: 8px;
   font-size: 0.85rem;
-}
-
-textarea {
-  resize: vertical;
 }
 
 .checkbox {
@@ -110,6 +105,11 @@ textarea {
 button {
   background: #fff;
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 button.primary {
