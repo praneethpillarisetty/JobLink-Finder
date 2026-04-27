@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "JobLink Finder",
+  "version": "1.0.0",
+  "description": "Generate ATS-focused Google job queries, extract result links, and track applications locally in Chrome.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": [
+    "https://www.google.com/search*",
+    "https://www.google.com/*"
+  ],
+  "action": {
+    "default_title": "JobLink Finder",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.google.com/search*"],
+      "js": ["storage.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
