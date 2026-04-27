@@ -1,31 +1,17 @@
 (() => {
-  const ATS_QUERY_PARTS = Object.freeze({
-    Workday: '(site:myworkdayjobs.com OR site:wd1.myworkdaysite.com)',
-    Greenhouse: 'site:boards.greenhouse.io',
-    Lever: 'site:jobs.lever.co',
-    Ashby: 'site:ashbyhq.com',
-    SmartRecruiters: 'site:smartrecruiters.com',
-    iCIMS: 'site:icims.com',
-    SuccessFactors: 'site:successfactors.com',
-    Oracle: '(site:oraclecloud.com OR site:oracle.com)'
-  });
-
-  const ALL_ATS_QUERY = `(${Object.values(ATS_QUERY_PARTS).join(' OR ')})`;
-
   const els = {
-    form: document.getElementById('queryForm'),
+    form: document.getElementById('searchForm'),
     jobTitle: document.getElementById('jobTitle'),
     location: document.getElementById('location'),
     workMode: document.getElementById('workMode'),
+    company: document.getElementById('company'),
     keywords: document.getElementById('keywords'),
     visa: document.getElementById('visaSponsorship'),
-    ats: document.getElementById('atsPlatform'),
-    generatedQuery: document.getElementById('generatedQuery'),
-    copyQuery: document.getElementById('copyQuery'),
+    openResultsInTabs: document.getElementById('openResultsInTabs'),
+    searchBtn: document.getElementById('searchBtn'),
+    clearAll: document.getElementById('clearAll'),
     jobList: document.getElementById('jobList'),
     jobCount: document.getElementById('jobCount'),
-    exportCsv: document.getElementById('exportCsv'),
-    clearAll: document.getElementById('clearAll'),
     statusMessage: document.getElementById('statusMessage')
   };
 
@@ -33,77 +19,21 @@
     els.statusMessage.textContent = message;
   }
 
-  function quoteWords(text) {
-    return text
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((token) => `"${token}"`)
-      .join(' ');
+  function setBusy(isBusy) {
+    els.searchBtn.disabled = isBusy;
+    els.searchBtn.textContent = isBusy ? 'Searching…' : 'Search Jobs';
   }
 
-  function buildQuery() {
-    const title = els.jobTitle.value.trim();
-    const location = els.location.value.trim();
-    const workMode = els.workMode.value;
-    const keywords = els.keywords.value.trim();
-    const includeVisa = els.visa.checked;
-    const ats = els.ats.value;
-
-    const atsPart = ats === 'All' ? ALL_ATS_QUERY : ATS_QUERY_PARTS[ats];
-    const parts = [atsPart];
-
-    if (title) {
-      parts.push(`(${quoteWords(title)})`);
-    }
-    if (location) {
-      parts.push(`(${quoteWords(location)})`);
-    }
-    if (workMode) {
-      parts.push(`("${workMode}")`);
-    }
-    if (keywords) {
-      parts.push(`(${quoteWords(keywords)})`);
-    }
-    if (includeVisa) {
-      parts.push('(\"visa sponsorship\" OR \"sponsorship available\")');
-    }
-
-    parts.push('(-intern -seniority:internship)');
-
-    return parts.join(' ');
-  }
-
-  function toCsv(jobs) {
-    const headers = ['id', 'title', 'url', 'source', 'status', 'query', 'dateSaved'];
-    const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
-    const rows = [headers.join(',')];
-
-    for (const job of jobs) {
-      rows.push(headers.map((header) => escape(job[header])).join(','));
-    }
-
-    return rows.join('\n');
-  }
-
-  async function exportCsv() {
-    const jobs = await window.JobLinkStorage.getAllJobs();
-    if (!jobs.length) {
-      setStatus('No saved jobs to export.');
-      return;
-    }
-
-    const csv = toCsv(jobs);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `joblink-finder-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-
-    URL.revokeObjectURL(url);
-    setStatus('CSV export complete.');
+  function mapPayload() {
+    return {
+      jobTitle: els.jobTitle.value.trim(),
+      location: els.location.value.trim(),
+      workMode: els.workMode.value,
+      company: els.company.value.trim(),
+      keywords: els.keywords.value.trim(),
+      visaSponsorship: els.visa.checked,
+      openResultsInTabs: els.openResultsInTabs.checked
+    };
   }
 
   function renderJobs(jobs) {
@@ -111,7 +41,7 @@
     els.jobList.innerHTML = '';
 
     if (!jobs.length) {
-      els.jobList.innerHTML = '<li class="job-item">No saved jobs yet. Run a Google search and reopen this popup.</li>';
+      els.jobList.innerHTML = '<li class="job-item">No jobs yet. Click <strong>Search Jobs</strong> to start discovery.</li>';
       return;
     }
 
@@ -129,7 +59,7 @@
 
       const meta = document.createElement('div');
       meta.className = 'job-meta';
-      meta.textContent = `${job.source} • ${new Date(job.dateSaved).toLocaleString()} • ${job.status}`;
+      meta.textContent = `${job.source} • ${new Date(job.dateSaved).toLocaleString()}`;
 
       const controls = document.createElement('div');
       controls.className = 'job-controls';
@@ -171,44 +101,45 @@
     renderJobs(jobs);
   }
 
-  function openGoogleSearch(query) {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    chrome.tabs.create({ url });
+  async function runAutomatedSearch(event) {
+    event.preventDefault();
+
+    if (!els.jobTitle.value.trim()) {
+      setStatus('Job title is required.');
+      return;
+    }
+
+    setBusy(true);
+    setStatus('Running background search across ATS platforms…');
+
+    const payload = mapPayload();
+    chrome.runtime.sendMessage({ type: 'JOBLINK_START_SEARCH', payload }, async (response) => {
+      setBusy(false);
+
+      if (chrome.runtime.lastError) {
+        setStatus(`Search failed: ${chrome.runtime.lastError.message}`);
+        return;
+      }
+
+      if (!response?.ok) {
+        setStatus(`Search failed: ${response?.error || 'Unknown error'}`);
+        return;
+      }
+
+      await refreshJobs();
+      const { extracted, saved } = response.summary;
+      setStatus(`Done. Extracted ${extracted} links, saved ${saved} unique jobs.`);
+    });
   }
 
   function bindEvents() {
-    const updateQueryPreview = () => {
-      els.generatedQuery.value = buildQuery();
-    };
-
-    ['input', 'change'].forEach((eventName) => {
-      els.form.addEventListener(eventName, updateQueryPreview);
-    });
-
-    els.form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const query = buildQuery();
-      els.generatedQuery.value = query;
-      openGoogleSearch(query);
-      setStatus('Opened Google search in a new tab.');
-    });
-
-    els.copyQuery.addEventListener('click', async () => {
-      const query = buildQuery();
-      els.generatedQuery.value = query;
-      await navigator.clipboard.writeText(query);
-      setStatus('Query copied to clipboard.');
-    });
-
-    els.exportCsv.addEventListener('click', exportCsv);
+    els.form.addEventListener('submit', runAutomatedSearch);
 
     els.clearAll.addEventListener('click', async () => {
       await window.JobLinkStorage.clearJobs();
       await refreshJobs();
-      setStatus('All saved jobs cleared.');
+      setStatus('Dashboard cleared.');
     });
-
-    updateQueryPreview();
   }
 
   async function init() {
