@@ -1,9 +1,9 @@
 # Privacy Policy — JobLink Finder
 
-JobLink Finder follows a strict local-only privacy architecture.
+JobLink Finder is designed with a local-first privacy model.
 
-## Data storage
-All job records are stored only in your browser via `chrome.storage.local`.
+## What data is stored
+The extension stores job records only in your browser using `chrome.storage.local`.
 
 Stored fields:
 - `id`
@@ -14,17 +14,17 @@ Stored fields:
 - `query`
 - `dateSaved`
 
-## What we do not do
+## What data is not collected
 JobLink Finder does **not**:
-- collect personal data
-- require login
-- run analytics or trackers
-- send saved job data to external servers
-- sell or share user data
+- collect personal information
+- require account creation or login
+- use analytics or tracking pixels
+- send your data to any backend server
+- sell or share your data with third parties
 
 ## Network behavior
-When you click **Search Jobs**, the extension opens Google search result pages in background tabs, extracts visible ATS links, and closes those tabs.
-No external APIs are used for extraction or storage.
+The extension opens Google Search pages when you click **Search Google** in the popup.
+Other than loading Google pages you intentionally open, JobLink Finder does not transmit saved job data over the network.
 
-## User control
-You can edit status, delete individual jobs, clear all jobs, and export your data as CSV at any time.
+## Data control
+You can delete any saved job entry or clear all saved jobs at any time from the extension popup.

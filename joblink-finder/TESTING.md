@@ -1,58 +1,63 @@
-# Manual Testing Guide (Automated Search UX)
+# Manual Testing Guide
 
 ## 1) Install unpacked extension
-1. Open `chrome://extensions`.
+1. Open Chrome and go to `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Click **Load unpacked** and choose `joblink-finder/`.
+3. Click **Load unpacked**.
+4. Select the `joblink-finder/` directory.
 
-Expected: Extension loads with no manifest errors.
+Expected: Extension loads without manifest errors.
 
-## 2) Validate simplified popup UX
-1. Open popup.
-2. Confirm there is no generated-query text area.
+## 2) Generate Workday search query
+1. Open the extension popup.
+2. Enter `Software Engineer` as Job title.
+3. Set ATS platform to **Workday**.
+4. Optionally add location and keywords.
 
-Expected: Popup only shows input fields, Search Jobs button, toggle for opening tabs, and dashboard list.
+Expected: Generated query includes `site:myworkdayjobs.com` or `site:wd1.myworkdaysite.com`.
 
-## 3) Automated background discovery
-1. Enter `Data Engineer` + `Remote` + keywords.
-2. Click **Search Jobs**.
+## 3) Open Google search
+1. Click **Search Google**.
 
-Expected: Search runs via background automation; status text updates after completion.
+Expected: A new Google tab opens with the encoded query.
 
-## 4) Google tab automation behavior
-1. During search, check open tabs briefly.
+## 4) Extract links
+1. On the opened Google results page, wait for page load.
+2. Return to popup and review Saved Jobs list.
 
-Expected: Google result tabs open in background and close after extraction (minimal clutter).
+Expected: ATS links from visible Google results appear in the dashboard.
 
-## 5) Deduplication verification
-1. Run the same search twice.
+## 5) Verify duplicate removal
+1. Re-run the same query and visit the same result page.
+2. Reopen popup.
 
-Expected: No duplicate records by URL or equivalent title/domain combinations.
+Expected: Existing entries are not duplicated.
 
-## 6) Open results in tabs mode
-1. Enable **Open results in tabs**.
-2. Run search again.
+## 6) Verify status update
+1. Change a job status from **Saved** to **Applied**.
 
-Expected: Extracted jobs open in new tabs up to cap (12 max).
+Expected: Updated status persists in the list.
 
-## 7) Dashboard status workflow
-1. Update one job from Saved to Applied.
+## 7) Verify delete
+1. Click **Delete** on one saved job.
 
-Expected: Status persists.
+Expected: Selected job disappears from the list and storage.
 
-## 8) Delete and clear all
-1. Delete one job.
-2. Use Clear All.
+## 8) Verify CSV export
+1. Click **Export CSV**.
+2. Open downloaded CSV file.
 
-Expected: Entries are removed from local storage and UI.
+Expected: CSV contains headers and all job fields.
 
-## 9) CSV export
-1. Save a few jobs.
-2. Click Export CSV.
+## 9) Verify persistence after browser restart
+1. Close all Chrome windows.
+2. Relaunch Chrome and open popup.
 
-Expected: Downloaded CSV includes id,title,url,source,status,query,dateSaved.
+Expected: Saved jobs and statuses remain available.
 
-## 10) Privacy/network behavior
-1. Inspect extension activity in DevTools Network.
+## 10) Verify network behavior
+1. Open Chrome DevTools for the extension pages if needed.
+2. Use **Search Google** once.
+3. Monitor requests.
 
-Expected: No analytics or third-party API calls from extension code. Network activity is limited to Google search pages opened by the user-triggered automation.
+Expected: Extension only opens Google search pages; no analytics or remote API calls are made by the extension.

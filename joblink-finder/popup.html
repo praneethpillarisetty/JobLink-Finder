@@ -10,20 +10,20 @@
     <main class="app">
       <header>
         <h1>JobLink Finder</h1>
-        <p class="subtext">Automated ATS job discovery with local-only tracking.</p>
+        <p class="subtext">Find ATS job postings faster with advanced Google queries.</p>
       </header>
 
       <section class="card">
-        <h2>Search Inputs</h2>
-        <form id="searchForm">
+        <h2>Search Builder</h2>
+        <form id="queryForm">
           <div class="field-grid">
             <label>
               Job title
-              <input id="jobTitle" type="text" placeholder="Data Engineer" required />
+              <input id="jobTitle" type="text" placeholder="Software Engineer" required />
             </label>
             <label>
               Location
-              <input id="location" type="text" placeholder="Remote or New York, NY" />
+              <input id="location" type="text" placeholder="Austin, TX" />
             </label>
             <label>
               Work mode
@@ -35,27 +35,39 @@
               </select>
             </label>
             <label>
-              Keywords
-              <input id="keywords" type="text" placeholder="ETL Snowflake Python" />
-            </label>
-            <label>
-              Company (optional)
-              <input id="company" type="text" placeholder="Stripe" />
+              ATS platform
+              <select id="atsPlatform">
+                <option value="All">All</option>
+                <option value="Workday">Workday</option>
+                <option value="Greenhouse">Greenhouse</option>
+                <option value="Lever">Lever</option>
+                <option value="Ashby">Ashby</option>
+                <option value="SmartRecruiters">SmartRecruiters</option>
+                <option value="iCIMS">iCIMS</option>
+                <option value="SuccessFactors">SuccessFactors</option>
+                <option value="Oracle">Oracle</option>
+              </select>
             </label>
           </div>
 
-          <label class="checkbox">
-            <input id="visaSponsorship" type="checkbox" />
-            Include visa sponsorship variations
+          <label>
+            Keywords
+            <input id="keywords" type="text" placeholder="python kubernetes healthcare" />
           </label>
 
           <label class="checkbox">
-            <input id="openResultsInTabs" type="checkbox" />
-            Open results in tabs (max 12)
+            <input id="visaSponsorship" type="checkbox" />
+            Include visa sponsorship terms
+          </label>
+
+          <label>
+            Generated Google query
+            <textarea id="generatedQuery" rows="3" readonly></textarea>
           </label>
 
           <div class="actions">
-            <button type="submit" class="primary" id="searchButton">Search Jobs</button>
+            <button type="submit" class="primary">Search Google</button>
+            <button id="copyQuery" type="button">Copy Query</button>
           </div>
         </form>
       </section>

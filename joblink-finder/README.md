@@ -1,20 +1,18 @@
 # JobLink Finder (Manifest V3)
 
-JobLink Finder is a local-only Chrome extension that automates ATS-focused Google job discovery and tracks your pipeline privately.
+JobLink Finder is a local-only Chrome extension that helps job seekers:
+- build advanced ATS-focused Google queries,
+- extract job links from Google results,
+- track application status,
+- export progress to CSV.
 
-## What changed in this UX redesign
-- No visible query output in the popup.
-- One-click **Search Jobs** automation.
-- Background service worker generates and runs multiple Google queries in non-focused tabs.
-- Automatic extraction + deduplication + local storage.
-- Optional toggle to open extracted jobs in tabs (capped).
+No backend, no account, no analytics, and no data sharing.
 
 ## Folder Structure
 
 ```text
 joblink-finder/
   manifest.json
-  background.js
   popup.html
   popup.css
   popup.js
@@ -29,38 +27,69 @@ joblink-finder/
   long-description.txt
 ```
 
-## Setup (Unpacked)
-1. Open `chrome://extensions`.
-2. Enable **Developer mode**.
-3. Click **Load unpacked** and select `joblink-finder/`.
+## Setup Instructions
 
-## How it works
-1. Enter job inputs in popup.
-2. Click **Search Jobs**.
-3. Service worker generates multiple ATS and career-page Google query variations.
-4. Queries run in background tabs with throttling.
-5. Content script extracts visible ATS links from each SERP.
-6. Results are deduplicated and stored in `chrome.storage.local`.
-7. Optional: top results open in tabs (up to 12).
+1. Clone or download this repository.
+2. Open Chrome and visit `chrome://extensions`.
+3. Enable **Developer mode**.
+4. Click **Load unpacked** and select `joblink-finder/`.
 
-## Chrome Web Store packaging
-1. Zip contents of `joblink-finder/`.
-2. Upload in Chrome Web Store dashboard.
-3. Use store metadata files in this folder.
-4. Provide required screenshots and policy info.
+The extension icon/popup will now be available in Chrome.
 
-## Permission rationale
-- `storage`: save jobs and statuses locally.
-- `tabs`: create/close background Google tabs and optional result tabs.
-- `scripting`: execute extraction workflow in controlled tab automation.
-- Host permissions only for Google domains required by search automation:
-  - `https://www.google.com/search*`
-  - `https://www.google.com/*`
+## Local Testing Instructions
 
-## Privacy
-- No backend server.
-- No analytics/tracking.
-- No login.
-- No external database.
-- No remote code execution.
-- All data remains local in `chrome.storage.local`.
+Use the full manual checklist in `TESTING.md`.
+
+Quick start:
+1. Open popup and enter job search inputs.
+2. Click **Search Google**.
+3. Let Google results load.
+4. Reopen popup to see extracted ATS job links.
+5. Update statuses, delete items, and export CSV.
+
+## Chrome Web Store Packaging Instructions
+
+1. Confirm extension metadata and descriptions are finalized.
+2. Ensure no private credentials or non-required files are included.
+3. Zip the `joblink-finder/` folder contents (not the parent directory).
+4. In Chrome Web Store Developer Dashboard:
+   - create a new item,
+   - upload zip,
+   - paste content from `store-title.txt`, `short-description.txt`, and `long-description.txt`,
+   - include `privacy.md` details in your privacy section.
+5. Complete screenshots and listing assets required by the store.
+
+## Permissions Explanation
+
+### `storage`
+Used to save job records locally in `chrome.storage.local`.
+
+### `tabs`
+Used only to open a new Google search tab when the user clicks **Search Google**.
+
+### Host permissions
+- `https://www.google.com/search*`
+- `https://www.google.com/*`
+
+These are required so the content script can run on Google Search result pages and extract visible ATS job links.
+
+## Data Model
+
+Each saved job record:
+
+```json
+{
+  "id": "string",
+  "title": "string",
+  "url": "string",
+  "source": "Workday|Greenhouse|Lever|Ashby|SmartRecruiters|iCIMS|SuccessFactors|Oracle|Other",
+  "status": "Saved|Applied|Interview|Rejected",
+  "query": "string",
+  "dateSaved": "ISO-8601 string"
+}
+```
+
+## Privacy Summary
+
+All data remains on the local browser profile via `chrome.storage.local`.
+The extension does not collect, transmit, sell, or share user data.

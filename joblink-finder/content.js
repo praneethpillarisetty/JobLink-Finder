@@ -1,89 +1,80 @@
-(() => {
-  const ATS_PATTERNS = [
-    'myworkdayjobs.com',
-    'myworkdaysite.com',
-    'boards.greenhouse.io',
-    'greenhouse.io',
-    'jobs.lever.co',
-    'jobs.ashbyhq.com',
-    'smartrecruiters.com',
-    'icims.com',
-    'successfactors.com',
-    'oraclecloud.com',
-    'bamboohr.com',
-    'linkedin.com/jobs'
-  ];
-
-  function normalizeUrl(url) {
-    try {
-      const parsed = new URL(url);
-      parsed.hash = '';
-      parsed.searchParams.delete('utm_source');
-      parsed.searchParams.delete('utm_medium');
-      parsed.searchParams.delete('utm_campaign');
-      return parsed.toString();
-    } catch {
-      return url;
-    }
+/**
+ * Extract ATS job links from Google Search results and save to local storage.
+ * Runs only on https://www.google.com/search*.
+ */
+(async () => {
+  if (!window.JobLinkStorage) {
+    return;
   }
 
-  function detectSource(url) {
-    const lowered = url.toLowerCase();
-    if (lowered.includes('workday')) return 'Workday';
-    if (lowered.includes('greenhouse')) return 'Greenhouse';
-    if (lowered.includes('lever')) return 'Lever';
-    if (lowered.includes('ashbyhq')) return 'Ashby';
-    if (lowered.includes('smartrecruiters')) return 'SmartRecruiters';
-    if (lowered.includes('icims')) return 'iCIMS';
-    if (lowered.includes('successfactors')) return 'SuccessFactors';
-    if (lowered.includes('oraclecloud')) return 'Oracle';
-    if (lowered.includes('bamboohr')) return 'BambooHR';
-    if (lowered.includes('linkedin.com/jobs')) return 'LinkedIn';
-    return 'Other';
-  }
+  const ATS_PATTERNS = window.JobLinkStorage.ATS_RULES.flatMap((rule) => rule.patterns);
 
-  function isSupportedJobUrl(url) {
+  function isAtsLink(url) {
     const lowered = (url || '').toLowerCase();
-    return ATS_PATTERNS.some((domain) => lowered.includes(domain));
+    return ATS_PATTERNS.some((pattern) => lowered.includes(pattern));
   }
 
-  function extractVisibleResults(query) {
-    const cards = document.querySelectorAll('div.g, div[data-sokoban-container], div.MjjYud');
+  function getCurrentQuery() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('q') || '';
+  }
+
+  function extractGoogleResultLinks() {
+    const anchors = [...document.querySelectorAll('a[href]')];
+
+    const candidates = anchors
+      .map((anchor) => {
+        const href = anchor.getAttribute('href') || '';
+        if (!href.startsWith('http')) {
+          return null;
+        }
+
+        const container = anchor.closest('div.g, div[data-sokoban-container], div.MjjYud');
+        if (!container) {
+          return null;
+        }
+
+        const heading = container.querySelector('h3');
+        const title = heading ? heading.textContent.trim() : anchor.textContent.trim();
+        if (!title) {
+          return null;
+        }
+
+        return { title, url: href };
+      })
+      .filter(Boolean)
+      .filter((item) => isAtsLink(item.url));
+
     const unique = new Map();
-
-    cards.forEach((card) => {
-      const anchor = card.querySelector('a[href^="http"]');
-      const heading = card.querySelector('h3');
-      if (!anchor || !heading) {
-        return;
+    for (const item of candidates) {
+      const key = window.JobLinkStorage.normalizeUrl(item.url);
+      if (!unique.has(key)) {
+        unique.set(key, item);
       }
-
-      const url = normalizeUrl(anchor.href);
-      if (!isSupportedJobUrl(url)) {
-        return;
-      }
-
-      if (!unique.has(url)) {
-        unique.set(url, {
-          title: heading.textContent.trim() || 'Untitled Job',
-          url,
-          source: detectSource(url),
-          query
-        });
-      }
-    });
+    }
 
     return [...unique.values()];
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== 'JOBLINK_EXTRACT_RESULTS') {
-      return false;
+  try {
+    const query = getCurrentQuery();
+    const links = extractGoogleResultLinks();
+
+    if (!links.length) {
+      return;
     }
 
-    const query = message.payload?.query || '';
-    const results = extractVisibleResults(query);
-    sendResponse({ results });
-    return true;
-  });
+    const records = links.map((link) => ({
+      title: link.title,
+      url: link.url,
+      source: window.JobLinkStorage.detectSource(link.url),
+      query,
+      status: 'Saved',
+      dateSaved: new Date().toISOString()
+    }));
+
+    await window.JobLinkStorage.upsertJobs(records);
+  } catch (error) {
+    console.error('JobLink Finder: unable to process search results.', error);
+  }
 })();

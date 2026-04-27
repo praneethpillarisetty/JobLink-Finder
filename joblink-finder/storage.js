@@ -9,15 +9,13 @@
 
   const ATS_RULES = Object.freeze([
     { key: 'Workday', patterns: ['myworkdayjobs.com', 'myworkdaysite.com'] },
-    { key: 'Greenhouse', patterns: ['boards.greenhouse.io', 'greenhouse.io'] },
+    { key: 'Greenhouse', patterns: ['boards.greenhouse.io'] },
     { key: 'Lever', patterns: ['jobs.lever.co'] },
-    { key: 'Ashby', patterns: ['jobs.ashbyhq.com', 'ashbyhq.com'] },
+    { key: 'Ashby', patterns: ['ashbyhq.com'] },
     { key: 'SmartRecruiters', patterns: ['smartrecruiters.com'] },
     { key: 'iCIMS', patterns: ['icims.com'] },
     { key: 'SuccessFactors', patterns: ['successfactors.com'] },
-    { key: 'Oracle', patterns: ['oraclecloud.com'] },
-    { key: 'BambooHR', patterns: ['bamboohr.com'] },
-    { key: 'LinkedIn', patterns: ['linkedin.com/jobs'] }
+    { key: 'Oracle', patterns: ['oraclecloud.com', 'oracle.com'] }
   ]);
 
   function getAllJobs() {
@@ -48,10 +46,6 @@
     try {
       const parsed = new URL(url);
       parsed.hash = '';
-      const trackingKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'gclid'];
-      for (const key of trackingKeys) {
-        parsed.searchParams.delete(key);
-      }
       if (parsed.pathname.endsWith('/')) {
         parsed.pathname = parsed.pathname.slice(0, -1);
       }
