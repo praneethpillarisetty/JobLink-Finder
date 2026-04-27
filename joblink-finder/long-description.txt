@@ -1,0 +1,17 @@
+JobLink Finder is a privacy-first job search extension that automates ATS job discovery from Google while keeping all data local in your browser.
+
+This Chrome job search tool helps you find hidden jobs across Workday jobs, Greenhouse jobs, Lever jobs, Ashby, SmartRecruiters, iCIMS, SuccessFactors, Oracle Cloud, BambooHR, direct career pages, and optional LinkedIn jobs coverage.
+
+Key capabilities:
+- Automated multi-query ATS job search with background tab processing.
+- Built-in strategy for exact match, keyword-enriched, broader, and visa sponsorship job searches.
+- Smart deduplication by URL and normalized title/domain to reduce repeated listings.
+- Local job tracker dashboard with status stages: Saved, Applied, Interview, Rejected.
+- CSV export for backup and reporting.
+
+Why use JobLink Finder:
+- Faster ATS job search coverage for hidden jobs not always visible on large job boards.
+- Clean UX focused on one-click discovery and practical tracking.
+- No login, no analytics, no external database, no tracking.
+
+If you want a focused Chrome extension for ATS job search, hidden jobs discovery, and privacy-first job tracker workflows, JobLink Finder is built for you.

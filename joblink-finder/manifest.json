@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "JobLink Finder",
+  "version": "1.1.0",
+  "description": "Automate ATS-focused Google job discovery, save links locally, and track applications privately.",
+  "permissions": ["storage", "tabs", "scripting"],
+  "host_permissions": [
+    "https://www.google.com/search*",
+    "https://www.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "JobLink Finder",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.google.com/search*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JobLink Finder</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>JobLink Finder</h1>
+        <p class="subtext">Automated ATS job discovery with local-only tracking.</p>
+      </header>
+
+      <section class="card">
+        <h2>Search Inputs</h2>
+        <form id="searchForm">
+          <div class="field-grid">
+            <label>
+              Job title
+              <input id="jobTitle" type="text" placeholder="Data Engineer" required />
+            </label>
+            <label>
+              Location
+              <input id="location" type="text" placeholder="Remote or New York, NY" />
+            </label>
+            <label>
+              Work mode
+              <select id="workMode">
+                <option value="">Any</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">Onsite</option>
+              </select>
+            </label>
+            <label>
+              Keywords
+              <input id="keywords" type="text" placeholder="ETL Snowflake Python" />
+            </label>
+            <label>
+              Company (optional)
+              <input id="company" type="text" placeholder="Stripe" />
+            </label>
+          </div>
+
+          <label class="checkbox">
+            <input id="visaSponsorship" type="checkbox" />
+            Include visa sponsorship variations
+          </label>
+
+          <label class="checkbox">
+            <input id="openResultsInTabs" type="checkbox" />
+            Open results in tabs (max 12)
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="primary" id="searchButton">Search Jobs</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Saved Jobs</h2>
+          <span id="jobCount">0</span>
+        </div>
+        <div class="actions">
+          <button id="exportCsv" type="button">Export CSV</button>
+          <button id="clearAll" type="button" class="danger">Clear All</button>
+        </div>
+        <ul id="jobList" class="job-list"></ul>
+      </section>
+
+      <p id="statusMessage" class="status" aria-live="polite"></p>
+    </main>
+
+    <script src="storage.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

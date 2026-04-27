@@ -1,0 +1,1 @@
+Automate ATS job discovery on Google, save & dedupe links locally, track applications, and export your pipeline as CSV.
