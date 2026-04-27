@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JobLink Finder</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>JobLink Finder</h1>
+        <p class="subtext">Find ATS job postings faster with advanced Google queries.</p>
+      </header>
+
+      <section class="card">
+        <h2>Search Builder</h2>
+        <form id="queryForm">
+          <div class="field-grid">
+            <label>
+              Job title
+              <input id="jobTitle" type="text" placeholder="Software Engineer" required />
+            </label>
+            <label>
+              Location
+              <input id="location" type="text" placeholder="Austin, TX" />
+            </label>
+            <label>
+              Work mode
+              <select id="workMode">
+                <option value="">Any</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">Onsite</option>
+              </select>
+            </label>
+            <label>
+              ATS platform
+              <select id="atsPlatform">
+                <option value="All">All</option>
+                <option value="Workday">Workday</option>
+                <option value="Greenhouse">Greenhouse</option>
+                <option value="Lever">Lever</option>
+                <option value="Ashby">Ashby</option>
+                <option value="SmartRecruiters">SmartRecruiters</option>
+                <option value="iCIMS">iCIMS</option>
+                <option value="SuccessFactors">SuccessFactors</option>
+                <option value="Oracle">Oracle</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Keywords
+            <input id="keywords" type="text" placeholder="python kubernetes healthcare" />
+          </label>
+
+          <label class="checkbox">
+            <input id="visaSponsorship" type="checkbox" />
+            Include visa sponsorship terms
+          </label>
+
+          <label>
+            Generated Google query
+            <textarea id="generatedQuery" rows="3" readonly></textarea>
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="primary">Search Google</button>
+            <button id="copyQuery" type="button">Copy Query</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Saved Jobs</h2>
+          <span id="jobCount">0</span>
+        </div>
+        <div class="actions">
+          <button id="exportCsv" type="button">Export CSV</button>
+          <button id="clearAll" type="button" class="danger">Clear All</button>
+        </div>
+        <ul id="jobList" class="job-list"></ul>
+      </section>
+
+      <p id="statusMessage" class="status" aria-live="polite"></p>
+    </main>
+
+    <script src="storage.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
