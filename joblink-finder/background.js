@@ -6,7 +6,8 @@ const GOOGLE_STABILIZE_DELAY_MS = 1200;
 const BETWEEN_REQUEST_DELAY_MS = 900;
 const MAX_CONCURRENT_TABS = 3;
 const MAX_QUERIES = 15;
-const MAX_OPEN_RESULT_TABS = 12;
+const DEFAULT_MAX_RESULTS = 20;
+const HARD_MAX_RESULTS = 50;
 
 const ATS_SITES = Object.freeze([
   'site:myworkdayjobs.com',
@@ -166,6 +167,15 @@ function waitForTabComplete(tabId, timeoutMs = GOOGLE_LOAD_TIMEOUT_MS) {
   });
 }
 
+async function ensureExtractorInjected(tabId) {
+  // Content scripts can fail to auto-run on freshly-created/inactive Google tabs.
+  // Explicitly inject both helper and extractor before messaging the tab.
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ['storage.js', 'content.js']
+  });
+}
+
 async function extractFromGoogleTab(query) {
   const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=20`;
   const tab = await chrome.tabs.create({ url, active: false });
@@ -174,11 +184,13 @@ async function extractFromGoogleTab(query) {
     await waitForTabComplete(tab.id);
     await sleep(GOOGLE_STABILIZE_DELAY_MS);
 
-    // Use scripting API for explicit readiness check.
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => document.readyState
     });
+
+    await sleep(600);
+    await ensureExtractorInjected(tab.id);
 
     const response = await chrome.tabs.sendMessage(tab.id, {
       type: 'JOBLINK_EXTRACT_RESULTS',
@@ -250,12 +262,20 @@ function dedupeJobs(records) {
   return output;
 }
 
-async function maybeOpenResultTabs(records, shouldOpenTabs) {
+function sanitizeMaxResults(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return DEFAULT_MAX_RESULTS;
+  }
+  return Math.min(HARD_MAX_RESULTS, Math.max(5, parsed));
+}
+
+async function maybeOpenResultTabs(records, shouldOpenTabs, maxResults) {
   if (!shouldOpenTabs) {
     return;
   }
 
-  const top = records.slice(0, MAX_OPEN_RESULT_TABS);
+  const top = records.slice(0, maxResults);
   for (const record of top) {
     await chrome.tabs.create({ url: record.url, active: false });
     await sleep(150);
@@ -263,6 +283,7 @@ async function maybeOpenResultTabs(records, shouldOpenTabs) {
 }
 
 async function runAutomatedSearch(payload) {
+  const maxResults = sanitizeMaxResults(payload?.maxResults);
   const queries = generateQueries(payload).slice(0, MAX_QUERIES);
   if (!queries.length) {
     throw new Error('Unable to generate search queries. Add a job title.');
@@ -271,10 +292,10 @@ async function runAutomatedSearch(payload) {
   await setSearchState({ running: true, lastError: '', scannedQueries: queries.length });
 
   const extracted = await runQueue(queries);
-  const deduped = dedupeJobs(extracted);
+  const deduped = dedupeJobs(extracted).slice(0, maxResults);
   const allJobs = await JobLinkStorage.upsertJobs(deduped);
 
-  await maybeOpenResultTabs(deduped, payload.openResultsInTabs);
+  await maybeOpenResultTabs(deduped, payload.openResultsInTabs, maxResults);
 
   await setSearchState({
     running: false,
@@ -289,6 +310,7 @@ async function runAutomatedSearch(payload) {
   return {
     extracted: extracted.length,
     saved: deduped.length,
+    limitedTo: maxResults,
     totalStored: allJobs.length
   };
 }

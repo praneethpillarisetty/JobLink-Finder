@@ -93,3 +93,10 @@ Each saved job record:
 
 All data remains on the local browser profile via `chrome.storage.local`.
 The extension does not collect, transmit, sell, or share user data.
+
+## Latest UI/Product Updates
+
+- Added Chrome Web Store-ready extension icons in `icons/`.
+- Added a `Max jobs to save/open` setting so users control how many results are saved or opened in tabs.
+- Improved popup width, spacing, typography, dashboard layout, and store-friendly SEO messaging.
+- Query generation remains hidden in the background for a cleaner user experience.

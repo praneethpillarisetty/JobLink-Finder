@@ -8,9 +8,14 @@
   </head>
   <body>
     <main class="app">
-      <header>
-        <h1>JobLink Finder</h1>
-        <p class="subtext">Private ATS job discovery from a single click.</p>
+      <header class="hero">
+        <div class="brand-row">
+          <img src="icons/icon32.png" alt="" class="brand-icon" />
+          <div>
+            <h1>JobLink Finder</h1>
+            <p class="subtext">Private ATS job search & local application tracker.</p>
+          </div>
+        </div>
       </header>
 
       <section class="card">
@@ -50,10 +55,17 @@
             Include visa sponsorship terms
           </label>
 
-          <label class="checkbox">
-            <input id="openResultsInTabs" type="checkbox" />
-            Open all jobs in tabs (max 12)
-          </label>
+          <div class="options-row">
+            <label>
+              Max jobs to save/open
+              <input id="maxResults" type="number" min="5" max="50" step="1" value="20" />
+            </label>
+            <label class="checkbox compact-check">
+              <input id="openResultsInTabs" type="checkbox" />
+              Open results in tabs
+            </label>
+          </div>
+          <p class="hint">Recommended: 10–20 results. Opening tabs is capped by your max jobs setting.</p>
 
           <div class="actions">
             <button type="submit" id="searchBtn" class="primary">Search Jobs</button>
@@ -64,7 +76,7 @@
 
       <section class="card">
         <div class="card-header">
-          <h2>Dashboard</h2>
+          <h2>Saved job leads</h2>
           <span id="jobCount">0</span>
         </div>
         <ul id="jobList" class="job-list"></ul>

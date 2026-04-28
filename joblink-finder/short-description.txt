@@ -1,1 +1,1 @@
-Find hidden ATS job postings on Google, save links locally, track status, and export your job pipeline to CSV.
+Find hidden Workday, Greenhouse, Lever, Ashby, and ATS jobs with private local tracking.

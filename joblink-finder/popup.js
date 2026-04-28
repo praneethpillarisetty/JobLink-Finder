@@ -8,6 +8,7 @@
     keywords: document.getElementById('keywords'),
     visa: document.getElementById('visaSponsorship'),
     openResultsInTabs: document.getElementById('openResultsInTabs'),
+    maxResults: document.getElementById('maxResults'),
     searchBtn: document.getElementById('searchBtn'),
     clearAll: document.getElementById('clearAll'),
     jobList: document.getElementById('jobList'),
@@ -32,7 +33,8 @@
       company: els.company.value.trim(),
       keywords: els.keywords.value.trim(),
       visaSponsorship: els.visa.checked,
-      openResultsInTabs: els.openResultsInTabs.checked
+      openResultsInTabs: els.openResultsInTabs.checked,
+      maxResults: Math.min(50, Math.max(5, Number.parseInt(els.maxResults.value, 10) || 20))
     };
   }
 
@@ -127,8 +129,8 @@
       }
 
       await refreshJobs();
-      const { extracted, saved } = response.summary;
-      setStatus(`Done. Extracted ${extracted} links, saved ${saved} unique jobs.`);
+      const { extracted, saved, limitedTo } = response.summary;
+      setStatus(`Done. Extracted ${extracted} links, saved ${saved} unique jobs${limitedTo ? ` (limit ${limitedTo})` : ''}.`);
     });
   }
 
